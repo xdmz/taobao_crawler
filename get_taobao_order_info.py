@@ -70,7 +70,7 @@ class TaoBao(object):
         :return:
         """
         orders = [] if orders is None else orders
-        action = ActionChains(self.browser)
+        # action = ActionChains(self.browser)
 
         # loop orders
         for i in range(4, 19):
@@ -89,12 +89,25 @@ class TaoBao(object):
 
             # try to move mouse to "物流信息" and get the info, fail to do so means there is no "物流信息" for this order
             try:
-                action.move_to_element(self.browser.find_element_by_xpath(logistics_xpath)).perform()
-                time.sleep(2)
-                ship_info = self.browser.find_element_by_class_name('logistics-info-mod__header___2_fWN').text
-                ship_company, ship_number = ship_info.replace("：", ",").split(",")
+                # action.move_to_element(self.browser.find_element_by_xpath(logistics_xpath)).perform()
+                button = self.browser.find_element_by_xpath(logistics_xpath)
+                if button.text == '查看物流':
+                    button.click()
+
+                    # time.sleep(2)
+                    self.browser.switch_to.window(self.browser.window_handles[-1])
+                    package_status = self.browser.find_element_by_class_name('status-list').text
+                    package_status = package_status.replace("\n",  ";")
+                    ship_number = self.browser.find_element_by_xpath('//*[@id="content"]/div[2]/div[3]/div[2]/div[2]/div/div[1]/span[1]').text
+                    ship_company = self.browser.find_element_by_xpath('//*[@id="content"]/div[2]/div[3]/div[2]/div[2]/div/div[1]/span[2]').text
+                    self.browser.close()
+                    self.browser.switch_to.window(self.browser.window_handles[0])
+                    # ship_info = self.browser.find_element_by_class_name('logistics-info-mod__header___2_fWN').text
+                    # ship_company, ship_number = ship_info.replace("：", ",").split(",")
+                else:
+                    ship_company, ship_number, package_status = '', '', ''
             except:
-                ship_company, ship_number = '', ''
+                ship_company, ship_number, package_status = '', '', ''
 
             # loop items in "this" order
             items = self.browser.find_elements_by_xpath(f'//*[@id="tp-bought-root"]/div[{i}]/div/table/tbody[2]/tr')
@@ -111,20 +124,28 @@ class TaoBao(object):
                 except:
                     continue
 
-                order_info = f'{date},{order_number},{price},{ship_company},{ship_number},{description},{unit_price}'
+                order_info = f'{date},{order_number},{price},{ship_company},{ship_number},{package_status},{description},{unit_price}'
                 orders.append(order_info)
 
         return orders
 
-    def get_purchase_list(self, num_pages):
+    def get_purchase_list(self, start_page, end_page):
         """
 
         :return:
         """
         self.open_my_taobao()
         self.click_button(xpath=self.bought_xpath, timeout=30)
-        print("getting order info in page 1...")
+
+        # skip first start_page-1 pages
+        for i in range(start_page-1):
+            self.click_next_page()
+            time.sleep(3)
+
+        print(f"getting order info in page {start_page}...")
         orders = self.get_order_info(orders=None)
+
+        num_pages = end_page - start_page + 1
         for i in range(num_pages - 1):
             self.click_next_page()
             time.sleep(3)
@@ -132,21 +153,23 @@ class TaoBao(object):
             orders = self.get_order_info(orders=orders)
 
         with open('订单信息.csv', 'w', encoding='utf-8') as f:
-            header = '日期,订单号,订单总价格,物流公司,运单号码,宝贝,宝贝单价'
+            header = '日期,订单号,订单总价格,物流公司,运单号码,物流信息,宝贝,宝贝单价'
             f.write(header + '\n')
             for order in orders:
                 f.write(order + '\n')
 
 
-def main(num_pages=1):
+def main(start_page, end_page):
     taobao = TaoBao()
-    taobao.get_purchase_list(num_pages)
+    taobao.get_purchase_list(start_page, end_page)
 
 
 if __name__ == '__main__':
     try:
-        num_pages = sys.argv[1]
+        start_page = sys.argv[1]
+        end_page = sys.argv[2]
     except:
-        num_pages = 1
-    main(int(num_pages))
+        start_page = 2
+        end_page = 2
+    main(int(start_page), int(end_page))
     print("Done!")
