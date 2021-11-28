@@ -135,6 +135,9 @@ class TaoBao(object):
         :return:
         """
         self.open_my_taobao()
+        time.sleep(40)
+        self.click_button(xpath=self.taobao_xpath, timeout=120)
+        self.click_button(xpath=self.my_taobao_xpath, timeout=120)
         self.click_button(xpath=self.bought_xpath, timeout=30)
 
         # skip first start_page-1 pages
