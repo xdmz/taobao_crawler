@@ -14,6 +14,7 @@ class TaoBao(object):
     """
     url = 'https://www.taobao.com'
     my_taobao_xpath = '//*[@id="J_SiteNavMytaobao"]/div[1]/a/span'
+    taobao_xpath = '//*[@id="header"]/div/h1/a'
     bought_xpath = '//*[@id="bought"]'
     next_page_xpath = '//*[@id="tp-bought-root"]/div[3]/div[2]/div/button[2]'
 
@@ -136,9 +137,10 @@ class TaoBao(object):
         """
         self.open_my_taobao()
         time.sleep(40)
-        self.click_button(xpath=self.taobao_xpath, timeout=120)
-        self.click_button(xpath=self.my_taobao_xpath, timeout=120)
-        self.click_button(xpath=self.bought_xpath, timeout=30)
+        self.browser.switch_to.window(self.browser.window_handles[-1])
+        # self.click_button(xpath=self.taobao_xpath, timeout=120)
+        # self.click_button(xpath=self.my_taobao_xpath, timeout=120)
+        self.click_button(xpath=self.bought_xpath, timeout=120)
 
         # skip first start_page-1 pages
         for i in range(start_page-1):
